@@ -215,7 +215,7 @@ int main(int argc, char **argv) {
    // }
    for (size_t addr = begin_signature_addr/4; addr < end_signature_addr/4; addr++) {
       char output[9];
-      sprintf(output, "%08x", memory32[addr]);
+      snprintf(output, sizeof(output), "%08x", memory32[addr]);
       signature_file << output << std::endl;
    }
 
