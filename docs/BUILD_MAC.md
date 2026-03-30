@@ -112,6 +112,7 @@ git submodule update --init --recursive
 | 3 | `verilator -Wall --cc simple_cpu/... --exe simulation/main.cpp` |
 | 4 | `gmake -j<N> -C obj_dir -f Vsimple_cpu.mk Vsimple_cpu` |
 | 5 | Copies `Vsimple_cpu` into `riscv-compliance/` |
+| 5.5 | Patches test-suite Makefiles to add `_zicsr_zifencei` (GCC ≥ 12 only) |
 | 6 | `gmake RISCV_PREFIX=<auto-detected>` inside `riscv-compliance/` |
 
 ### Environment variables
@@ -163,6 +164,17 @@ Install GNU Make: `brew install make`.
 
 Install the RISC-V toolchain (see §3) and ensure its `bin/` is on your `PATH`.
 The script auto-detects `riscv32-unknown-elf-gcc` first, then `riscv64-unknown-elf-gcc`.
+
+### `extension 'zicsr' required` / `extension 'zifencei' required` assembler errors
+
+GCC 12 removed the Zicsr (CSR instructions such as `csrr`, `csrw`, `csrrw`) and
+Zifencei (`fence.i`) sub-extensions from the base `rv32i` / `rv64i` architecture
+profiles.  They must now be listed explicitly in `-march=` (for example
+`-march=rv32i_zicsr_zifencei`).
+
+`build_and_run_test.sh` detects the GCC major version automatically and patches
+the test-suite Makefiles to add `_zicsr_zifencei` when GCC ≥ 12 is found.  No
+manual action is required.
 
 ### Verilator warnings treated as errors
 

@@ -152,6 +152,35 @@ echo "==> Compiling Vsimple_cpu ..."
 cp obj_dir/Vsimple_cpu riscv-compliance/
 
 # ---------------------------------------------------------------------------
+# Step 3.5: Patch test-suite Makefiles for GCC 12+ Zicsr / Zifencei split
+# ---------------------------------------------------------------------------
+# GCC 12 removed the Zicsr (CSR instructions) and Zifencei (FENCE.I) sub-
+# extensions from the base rv32i / rv64i architecture profiles.  They must
+# now be listed explicitly in -march= (e.g. -march=rv32i_zicsr_zifencei).
+# The riscv-compliance test-suite Makefiles pre-date this change, so we
+# patch them at build time when a GCC ≥ 12 toolchain is detected.
+GCC_MAJOR_VER=$(${RISCV_PREFIX}gcc -dumpversion 2>/dev/null | grep -oE '^[0-9]+' || true)
+if [ -n "${GCC_MAJOR_VER}" ] && [ "${GCC_MAJOR_VER}" -ge 12 ]; then
+  echo "==> GCC ${GCC_MAJOR_VER}: adding _zicsr_zifencei to -march flags in test-suite Makefiles ..."
+  while IFS= read -r mf; do
+    # Skip files that have already been patched
+    if grep -q '\-march=' "${mf}" && ! grep -q '_zicsr' "${mf}"; then
+      python3 -c "
+import re
+import sys
+path = sys.argv[1]
+text = open(path).read()
+# Append _zicsr_zifencei after the ISA name in each -march= flag.
+# The lookahead '[^a-zA-Z0-9_]' stops before any existing sub-extension
+# or whitespace so existing extensions are never duplicated.
+text = re.sub(r'(-march=rv\d+[a-z]*)(?=[^a-zA-Z0-9_])', r'\1_zicsr_zifencei', text)
+open(path, 'w').write(text)
+" "${mf}"
+    fi
+  done < <(find riscv-compliance/riscv-test-suite -name "Makefile")
+fi
+
+# ---------------------------------------------------------------------------
 # Step 4: Run riscv-compliance tests
 # ---------------------------------------------------------------------------
 echo "==> Running riscv-compliance tests (RISCV_PREFIX=${RISCV_PREFIX}) ..."
