@@ -181,6 +181,30 @@ open(path, 'w').write(text)
 fi
 
 # ---------------------------------------------------------------------------
+# Step 3.6: Patch test-suite sources: replace mbadaddr → mtval
+# ---------------------------------------------------------------------------
+# The mbadaddr CSR was renamed to mtval in the RISC-V Privileged Spec 1.10
+# (ratified 2019-06-08).  Modern binutils (GNU Binutils 2.38+) no longer
+# accept the old name and emit "unknown CSR `mbadaddr'" errors.
+# The riscv-compliance test-suite pre-dates this rename, so we patch the
+# affected .S source files at build time.  mtval is backward-compatible
+# with any toolchain released since 2018, so the replacement is applied
+# unconditionally.
+while IFS= read -r sf; do
+  if grep -q '\bmbadaddr\b' "${sf}"; then
+    echo "==> Patching mbadaddr -> mtval in ${sf} ..."
+    python3 -c "
+import re
+import sys
+path = sys.argv[1]
+text = open(path).read()
+text = re.sub(r'\bmbadaddr\b', 'mtval', text)
+open(path, 'w').write(text)
+" "${sf}"
+  fi
+done < <(find riscv-compliance/riscv-test-suite -name "*.S" -o -name "*.s")
+
+# ---------------------------------------------------------------------------
 # Step 4: Run riscv-compliance tests
 # ---------------------------------------------------------------------------
 echo "==> Running riscv-compliance tests (RISCV_PREFIX=${RISCV_PREFIX}) ..."

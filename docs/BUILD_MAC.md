@@ -112,7 +112,8 @@ git submodule update --init --recursive
 | 3 | `verilator -Wall --cc simple_cpu/... --exe simulation/main.cpp` |
 | 4 | `gmake -j<N> -C obj_dir -f Vsimple_cpu.mk Vsimple_cpu` |
 | 5 | Copies `Vsimple_cpu` into `riscv-compliance/` |
-| 5.5 | Patches test-suite Makefiles to add `_zicsr_zifencei` (GCC ≥ 12 only) |
+| 5.5 | Patches test-suite Makefiles to add `_zicsr_zifencei` (GCC ≥ 12 only, matches script step 3.5) |
+| 5.6 | Patches test-suite `.S` sources: `mbadaddr` → `mtval` (binutils 2.38+, matches script step 3.6) |
 | 6 | `gmake RISCV_PREFIX=<auto-detected>` inside `riscv-compliance/` |
 
 ### Environment variables
@@ -175,6 +176,16 @@ profiles.  They must now be listed explicitly in `-march=` (for example
 `build_and_run_test.sh` detects the GCC major version automatically and patches
 the test-suite Makefiles to add `_zicsr_zifencei` when GCC ≥ 12 is found.  No
 manual action is required.
+
+### `unknown CSR 'mbadaddr'` assembler error
+
+The `mbadaddr` CSR was renamed to `mtval` (Machine Trap Value) in the RISC-V
+Privileged Architecture spec v1.10 (2019).  GNU Binutils 2.38 and later no
+longer accept the old `mbadaddr` name and emit `unknown CSR 'mbadaddr'`.
+
+`build_and_run_test.sh` automatically patches `mbadaddr` → `mtval` in the
+test-suite `.S` source files before running the compliance tests.  No manual
+action is required.
 
 ### Verilator warnings treated as errors
 
