@@ -137,6 +137,12 @@ begin : main
       error_instruction <= 1'b0;
       debug <= 32'b1;
 
+      CSRegs[mscratch] <= 32'b0;
+      CSRegs[mtvec]    <= 32'b0;
+      CSRegs[mepc]     <= 32'b0;
+      CSRegs[mcause]   <= 32'b0;
+      CSRegs[mtval]    <= 32'b0;
+
       state <= IF_MEM;
    end else begin
 
@@ -161,6 +167,7 @@ begin : main
             pc <= CSRegs[mtvec];
             CSRegs[mepc] <= pc;
             CSRegs[mtval] <= pc;
+            CSRegs[mcause] <= 32'd0; //0 = instruction address misaligned
             state <= IF_MEM;
          end
       end
@@ -192,8 +199,6 @@ begin : main
             end else if ( read_data[6:0] == 7'b0010111 ) begin //auipc
                future_state <= EX_UPC;
             end else if ( read_data[6:0] == 7'b0110111 ) begin //lui
-               read_1_en <= 1'b1;
-               read_reg_1 <= read_data[11:7];
                future_state <= EX_LUI;
             end else if ( read_data[6:0] == 7'b1100111 ) begin //jalr
                read_1_en <= 1'b1;
