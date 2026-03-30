@@ -40,7 +40,7 @@ brew install git
 ## 3. Install a RISC-V GCC cross-compiler
 
 The `riscv-compliance` test suite compiles test programs for the RISC-V ISA.
-You need a cross-compiler such as `riscv32-unknown-elf-gcc`.
+You need a cross-compiler such as `riscv64-unknown-elf-gcc`.
 
 ### Option A – Homebrew (recommended, easiest)
 
@@ -49,14 +49,21 @@ brew tap riscv-software-src/riscv
 brew install riscv-gnu-toolchain
 ```
 
-This installs `riscv32-unknown-elf-gcc`, `riscv32-unknown-elf-objdump`, etc.
+This installs `riscv64-unknown-elf-gcc`, `riscv64-unknown-elf-objdump`, etc.
 under `/opt/homebrew/bin/` (Apple Silicon) or `/usr/local/bin/` (Intel).
+
+The build script detects this toolchain automatically — no extra configuration
+is needed.
 
 Verify:
 
 ```bash
-riscv32-unknown-elf-gcc --version
+riscv64-unknown-elf-gcc --version
 ```
+
+> **Note on older toolchain builds:** some pre-2024 builds of the Homebrew
+> formula installed the prefix as `riscv32-unknown-elf-`.  The build script
+> auto-detects both prefixes (32-bit takes priority when both are present).
 
 ### Option B – Pre-built binaries from SiFive / GitHub releases
 
@@ -72,15 +79,6 @@ export PATH="/opt/riscv/bin:$PATH"
 ```
 
 Or set `RISCV_TOOLCHAIN_BIN` when running the script (see §5).
-
-### Option C – riscv64-unknown-elf (multilib)
-
-If your toolchain uses the `riscv64-unknown-elf-` prefix instead of
-`riscv32-unknown-elf-`, pass the prefix explicitly:
-
-```bash
-RISCV_PREFIX=riscv64-unknown-elf- ./build_and_run_test.sh
-```
 
 ---
 
@@ -114,13 +112,13 @@ git submodule update --init --recursive
 | 3 | `verilator -Wall --cc simple_cpu/... --exe simulation/main.cpp` |
 | 4 | `gmake -j<N> -C obj_dir -f Vsimple_cpu.mk Vsimple_cpu` |
 | 5 | Copies `Vsimple_cpu` into `riscv-compliance/` |
-| 6 | `gmake RISCV_PREFIX=riscv32-unknown-elf-` inside `riscv-compliance/` |
+| 6 | `gmake RISCV_PREFIX=<auto-detected>` inside `riscv-compliance/` |
 
 ### Environment variables
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `RISCV_PREFIX` | `riscv32-unknown-elf-` | Toolchain prefix |
+| `RISCV_PREFIX` | auto-detected (`riscv32-unknown-elf-` → `riscv64-unknown-elf-`) | Toolchain prefix |
 | `RISCV_TOOLCHAIN_BIN` | *(unset)* | Prepended to `$PATH` |
 | `MAKE` | `gmake` (macOS) / `make` (Linux) | Override make binary |
 
@@ -130,7 +128,7 @@ git submodule update --init --recursive
 # Toolchain in a non-standard location
 RISCV_TOOLCHAIN_BIN=/opt/riscv/bin ./build_and_run_test.sh
 
-# Use 64-bit multilib toolchain (riscv64-unknown-elf-gcc --march=rv32i)
+# Explicitly force the 64-bit multilib prefix (auto-detected by default)
 RISCV_PREFIX=riscv64-unknown-elf- ./build_and_run_test.sh
 ```
 
@@ -161,9 +159,10 @@ Failures are printed as `FAIL: <test-name>`.
 
 Install GNU Make: `brew install make`.
 
-### `riscv32-unknown-elf-gcc: command not found`
+### `riscv64-unknown-elf-gcc: command not found` (or `riscv32-unknown-elf-gcc`)
 
 Install the RISC-V toolchain (see §3) and ensure its `bin/` is on your `PATH`.
+The script auto-detects `riscv32-unknown-elf-gcc` first, then `riscv64-unknown-elf-gcc`.
 
 ### Verilator warnings treated as errors
 

@@ -2,7 +2,9 @@
 # build_and_run_test.sh – Build Vsimple_cpu with Verilator and run riscv-compliance tests.
 #
 # Environment variables (all optional):
-#   RISCV_PREFIX          Toolchain prefix, e.g. riscv32-unknown-elf-  (default: riscv32-unknown-elf-)
+#   RISCV_PREFIX          Toolchain prefix, e.g. riscv64-unknown-elf-
+#                         Auto-detected: prefers riscv32-unknown-elf- when available,
+#                         then falls back to riscv64-unknown-elf-.
 #   RISCV_TOOLCHAIN_BIN   Directory that contains the RISC-V toolchain binaries.
 #                         When set, it is prepended to PATH before make is invoked.
 #   MAKE                  Override the make command (default: auto-detected).
@@ -76,8 +78,23 @@ fi
 
 # ---------------------------------------------------------------------------
 # Determine RISC-V toolchain prefix
+#
+# Priority:
+#   1. Explicit RISCV_PREFIX env var (user override – always respected)
+#   2. riscv32-unknown-elf-  (traditional 32-bit-only toolchain)
+#   3. riscv64-unknown-elf-  (multilib toolchain; compiles rv32i via -march/-mabi flags
+#                             that the riscv-compliance Makefile already passes)
+#   4. Fall back to riscv32-unknown-elf- as the error-message default
 # ---------------------------------------------------------------------------
-RISCV_PREFIX="${RISCV_PREFIX:-riscv32-unknown-elf-}"
+if [ -z "${RISCV_PREFIX:-}" ]; then
+  if command -v riscv32-unknown-elf-gcc >/dev/null 2>&1; then
+    RISCV_PREFIX="riscv32-unknown-elf-"
+  elif command -v riscv64-unknown-elf-gcc >/dev/null 2>&1; then
+    RISCV_PREFIX="riscv64-unknown-elf-"
+  else
+    RISCV_PREFIX="riscv32-unknown-elf-"
+  fi
+fi
 
 # Check that the compiler is reachable – print a friendly hint if not.
 if ! command -v "${RISCV_PREFIX}gcc" >/dev/null 2>&1; then
@@ -87,6 +104,7 @@ WARNING: '${RISCV_PREFIX}gcc' not found in PATH.
   On macOS (Homebrew) you can install a RISC-V toolchain with:
     brew tap riscv-software-src/riscv
     brew install riscv-gnu-toolchain
+  This installs riscv64-unknown-elf-gcc, which is detected automatically.
   If your toolchain uses a different prefix, set RISCV_PREFIX before running:
     RISCV_PREFIX=riscv64-unknown-elf- $0
   If your toolchain binaries are in a non-standard directory, set RISCV_TOOLCHAIN_BIN:

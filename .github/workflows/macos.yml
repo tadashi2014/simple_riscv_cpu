@@ -61,5 +61,3 @@ jobs:
 
       - name: Build and run compliance tests
         run: ./build_and_run_test.sh
-        env:
-          RISCV_PREFIX: riscv32-unknown-elf-

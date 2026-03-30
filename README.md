@@ -14,7 +14,7 @@ Verilog implementation of a simple RISC-V CPU, simulated with [Verilator](https:
 | GNU Make | 4.x | `brew install make` | `sudo apt install make` |
 | Git | any | `brew install git` | `sudo apt install git` |
 | C++ compiler | clang 14 / g++ 12 | Xcode CLT: `xcode-select --install` | `sudo apt install build-essential` |
-| riscv32-unknown-elf-gcc | any | see below | see below |
+| riscv64-unknown-elf-gcc | any | see below | see below |
 
 > **macOS note:** The system `make` on macOS is BSD make, which is **not** compatible with Verilator's generated `Makefile`. Install GNU Make via Homebrew (`brew install make`) – the script will automatically use `gmake`.
 
@@ -23,10 +23,10 @@ Verilog implementation of a simple RISC-V CPU, simulated with [Verilator](https:
 **macOS (Homebrew):**
 ```bash
 brew tap riscv-software-src/riscv
-brew install riscv-gnu-toolchain   # provides riscv32-unknown-elf-gcc
+brew install riscv-gnu-toolchain   # provides riscv64-unknown-elf-gcc
 ```
 
-If the toolchain uses a different prefix (e.g. `riscv64-unknown-elf-`), set `RISCV_PREFIX` before running the script (see [Environment Variables](#environment-variables)).
+The build script auto-detects the prefix (`riscv32-unknown-elf-` first, then `riscv64-unknown-elf-`); no extra configuration is needed.
 
 **Linux:**
 ```bash
@@ -67,7 +67,7 @@ The script will:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `RISCV_PREFIX` | `riscv32-unknown-elf-` | Toolchain prefix (e.g. `riscv64-unknown-elf-`) |
+| `RISCV_PREFIX` | auto-detected | Toolchain prefix (`riscv32-unknown-elf-` or `riscv64-unknown-elf-`) |
 | `RISCV_TOOLCHAIN_BIN` | *(unset)* | Path to toolchain `bin/` directory (prepended to `$PATH`) |
 | `MAKE` | auto-detected | Override the make command (`gmake`, `make`, …) |
 
