@@ -4,7 +4,17 @@
 #include <string>
 #include <fstream>
 #include <vector>
-#include <elf.h>
+/* Use the system ELF header on Linux; fall back to our portable definitions
+ * on macOS and other platforms that do not ship <elf.h>. */
+#ifdef __has_include
+#  if __has_include(<elf.h>)
+#    include <elf.h>
+#  else
+#    include "elf_portable.h"
+#  endif
+#else
+#  include <elf.h>
+#endif
 #include "Vsimple_cpu.h"
 #include "verilated.h"
 
