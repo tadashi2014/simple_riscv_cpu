@@ -43,16 +43,16 @@ begin
    end else if (control == 4'b0100) begin //xor
       acc = in1 ^ in2;
 
-   end else if (control == 4'b101) begin //srl
+   end else if (control == 4'b0101) begin //srl
       acc = in1 >> in2[4:0];
 
    end else if (control == 4'b1101) begin //sra (arith. shift)
       acc = $signed(in1) >>> in2[4:0];
 
-   end else if (control == 4'b110) begin //or
+   end else if (control == 4'b0110) begin //or
       acc = in1 | in2;
 
-   end else if (control == 4'b111) begin //and
+   end else if (control == 4'b0111) begin //and
       acc = in1 & in2;
 
    end else begin

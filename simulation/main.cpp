@@ -4,7 +4,17 @@
 #include <string>
 #include <fstream>
 #include <vector>
-#include <elf.h>
+/* Use the system ELF header on Linux; fall back to our portable definitions
+ * on macOS and other platforms that do not ship <elf.h>. */
+#ifdef __has_include
+#  if __has_include(<elf.h>)
+#    include <elf.h>
+#  else
+#    include "elf_portable.h"
+#  endif
+#else
+#  include <elf.h>
+#endif
 #include "Vsimple_cpu.h"
 #include "verilated.h"
 
@@ -204,9 +214,8 @@ int main(int argc, char **argv) {
    //    signature_file << std::endl;
    // }
    for (size_t addr = begin_signature_addr/4; addr < end_signature_addr/4; addr++) {
-      char output[3];
-      //sprintf(output, "%08x", memory32[addr]);
-      //output[1] = 0x11;
+      char output[9];
+      snprintf(output, sizeof(output), "%08x", memory32[addr]);
       signature_file << output << std::endl;
    }
 

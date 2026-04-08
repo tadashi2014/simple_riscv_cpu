@@ -1,0 +1,63 @@
+name: macOS Build & Compliance Tests
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+
+jobs:
+  # -------------------------------------------------------------------
+  # Job 1: Verilator build only (fast, no RISC-V toolchain needed)
+  # -------------------------------------------------------------------
+  build:
+    name: Verilator build (macOS)
+    runs-on: macos-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Verilator and GNU Make
+        run: brew install verilator make
+
+      - name: Build Vsimple_cpu
+        run: |
+          verilator -Wall --cc \
+            simple_cpu/simple_cpu.v \
+            simple_cpu/register_file/register_file.v \
+            simple_cpu/alu/alu.v \
+            --exe simulation/main.cpp
+          gmake -j"$(sysctl -n hw.logicalcpu)" \
+            -C obj_dir -f Vsimple_cpu.mk Vsimple_cpu
+          echo "Build succeeded: $(file obj_dir/Vsimple_cpu)"
+
+  # -------------------------------------------------------------------
+  # Job 2: Full compliance tests (needs RISC-V GCC toolchain)
+  # -------------------------------------------------------------------
+  compliance:
+    name: riscv-compliance tests (macOS)
+    runs-on: macos-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build tools
+        run: brew install verilator make
+
+      - name: Install RISC-V GCC toolchain
+        run: |
+          brew tap riscv-software-src/riscv
+          brew install riscv-gnu-toolchain
+
+      - name: Build and run compliance tests
+        run: ./build_and_run_test.sh
