@@ -240,10 +240,10 @@ begin : main
       MEM_LD: begin
          read_addr <= alu_out[31:0];
          if(instruction_sav[14:12] == 3'b000 || instruction_sav[14:12] == 3'b100) begin //LB || LBU
-            memory_mask <= 4'b0001;
+            memory_mask <= 4'b1111;
             read_req <= 1'b1;
          end else if (instruction_sav[14:12] == 3'b001 || instruction_sav[14:12] == 3'b101) begin //LH || LHU
-            memory_mask <= 4'b0011;
+            memory_mask <= 4'b1111;
             if (alu_out[0] == 1'b0) begin //check alignment
                read_req <= 1'b1;
             end else begin
@@ -270,15 +270,39 @@ begin : main
       WB_LD: begin
          if( read_data_valid == 1'b1) begin
             if(instruction_sav[14:12] == 3'b000) begin //LB
-               reg_write_data <= { {24{read_data[7]}}, read_data[7:0] };
+               if (read_addr[1:0] == 2'b00) begin
+                  reg_write_data <= { {24{read_data[7]}}, read_data[7:0] };
+               end else if (read_addr[1:0] == 2'b01) begin
+                  reg_write_data <= { {24{read_data[15]}}, read_data[15:8] };
+               end else if (read_addr[1:0] == 2'b10) begin
+                  reg_write_data <= { {24{read_data[23]}}, read_data[23:16] };
+               end else begin
+                  reg_write_data <= { {24{read_data[31]}}, read_data[31:24] };
+               end
             end else if (instruction_sav[14:12] == 3'b001) begin //LH
-               reg_write_data <= { {16{read_data[15]}}, read_data[15:0] };
+               if (read_addr[1] == 1'b0) begin
+                  reg_write_data <= { {16{read_data[15]}}, read_data[15:0] };
+               end else begin
+                  reg_write_data <= { {16{read_data[31]}}, read_data[31:16] };
+               end
             end else if (instruction_sav[14:12] == 3'b010) begin //LW
                reg_write_data <= read_data[31:0];
             end else if (instruction_sav[14:12] == 3'b100) begin //LBU
-               reg_write_data <= {24'b0, read_data[7:0]};
+               if (read_addr[1:0] == 2'b00) begin
+                  reg_write_data <= {24'b0, read_data[7:0]};
+               end else if (read_addr[1:0] == 2'b01) begin
+                  reg_write_data <= {24'b0, read_data[15:8]};
+               end else if (read_addr[1:0] == 2'b10) begin
+                  reg_write_data <= {24'b0, read_data[23:16]};
+               end else begin
+                  reg_write_data <= {24'b0, read_data[31:24]};
+               end
             end else if (instruction_sav[14:12] == 3'b101) begin //LHU
-               reg_write_data <= {16'b0, read_data[15:0]};
+               if (read_addr[1] == 1'b0) begin
+                  reg_write_data <= {16'b0, read_data[15:0]};
+               end else begin
+                  reg_write_data <= {16'b0, read_data[31:16]};
+               end
             end
             // debug <= read_data[31:0];
             write_reg <= instruction_sav[11:7];
@@ -317,11 +341,29 @@ begin : main
       end
       MEM_S: begin
          if(instruction_sav[14:12] == 3'b000) begin //SB
-            memory_mask <= 4'b0001;
+            if (alu_out[1:0] == 2'b00) begin
+               memory_mask <= 4'b0001;
+               write_data <= {24'b0, data_out_1[7:0]};
+            end else if (alu_out[1:0] == 2'b01) begin
+               memory_mask <= 4'b0010;
+               write_data <= {16'b0, data_out_1[7:0], 8'b0};
+            end else if (alu_out[1:0] == 2'b10) begin
+               memory_mask <= 4'b0100;
+               write_data <= {8'b0, data_out_1[7:0], 16'b0};
+            end else begin
+               memory_mask <= 4'b1000;
+               write_data <= {data_out_1[7:0], 24'b0};
+            end
             write_req <= 1'b1;
          end else if (instruction_sav[14:12] == 3'b001) begin //SH
-            memory_mask <= 4'b0011;
             if (alu_out[0] == 1'b0) begin //check alignment
+               if (alu_out[1] == 1'b0) begin
+                  memory_mask <= 4'b0011;
+                  write_data <= {16'b0, data_out_1[15:0]};
+               end else begin
+                  memory_mask <= 4'b1100;
+                  write_data <= {data_out_1[15:0], 16'b0};
+               end
                write_req <= 1'b1;
             end else begin
                pc <= CSRegs[mtvec];
@@ -332,6 +374,7 @@ begin : main
          end else if (instruction_sav[14:12] == 3'b010) begin //SW
             memory_mask <= 4'b1111;
             if (alu_out[1:0] == 2'b00) begin //check alignment
+               write_data <= data_out_1;
                write_req <= 1'b1;
             end else begin
                pc <= CSRegs[mtvec];
@@ -341,7 +384,6 @@ begin : main
             end
          end
          write_addr <= alu_out[31:0];
-         write_data <= data_out_1;
          // debug <= data_out_1;
          state <= WB_S;
       end
