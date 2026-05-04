@@ -1,3 +1,3 @@
 [submodule "riscv-compliance"]
 	path = riscv-compliance
-	url = https://github.com/damdoy/riscv-compliance.git
+	url = https://github.com/tadashi2014/riscv-compliance.git
